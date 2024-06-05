@@ -1,0 +1,16 @@
+{
+  "whitelists": [
+    {
+      "year": "2022",
+      "addresses": [
+        "0x0fcF2d861b30746ff4DD4Ba8f26f0429B1Ef45eC"
+      ]
+    },
+    {
+      "year": "2023",
+      "addresses": [
+        "0x0fcF2d861b30746ff4DD4Ba8f26f0429B1Ef45eC"
+      ]
+    }
+  ]
+}
