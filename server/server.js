@@ -55,7 +55,7 @@ const monitorContractEvents = async () => {
 	contract.on('NFTMinted', async (tokenId, tokenURI, recipient, event) => {
 		console.log('NFTMinted event:', tokenId, tokenURI);
 
-		const ownerAddress = recipient;
+		const ownerAddress = recipient.toLowerCase();
 		const transactionHash = event.log.transactionHash;
 		const blockNumber = event.log.blockNumber;
 		// const attributes = { tokenURI };
