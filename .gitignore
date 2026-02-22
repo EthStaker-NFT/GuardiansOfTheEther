@@ -68,6 +68,11 @@ Thumbs.db
 truffle-config.js
 truffle.js
 
+# Foundry broadcast artifacts
+broadcast/
+cache/
+out/
+
 # Compiled files
 **/*.o
 **/*.a
