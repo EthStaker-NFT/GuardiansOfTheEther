@@ -4,7 +4,7 @@ if (!process.env.AWS_EXECUTION_ENV) {
 
 const config = {
 	development: {
-		providerUrl: process.env.GANACHE_URL,
+		providerUrl: process.env.LOCAL_PROVIDER_URL,
 		whitelistPath: process.env.LOCAL_WHITELIST_PATH,
 		frontendUrl: process.env.LOCAL_FRONTEND_URL,
 		contractAddress: process.env.LOCAL_CONTRACT_ADDRESS,
