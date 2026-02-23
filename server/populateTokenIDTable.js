@@ -1,5 +1,5 @@
 const config = require('./config')[process.env.NODE_ENV || 'development'];
-const {createTable, createCounterTable, addItemToTable, configureAWS, listTables} = require("./dynamodb");
+const { createTable, createCounterTable, addItemToTable, configureAWS, listTables } = require("./dynamodb");
 
 const populateTokenIDTable = async () => {
 
@@ -8,7 +8,7 @@ const populateTokenIDTable = async () => {
 
 	const addCategoryToTable = async (startIndex, shuffledIds) => {
 		console.log(`Adding category with start index ${startIndex} to table.`);
-		for (i = 0; i < shuffledIds.length; i++) {
+		for (let i = 0; i < shuffledIds.length; i++) {
 			const item = {
 				Index: (startIndex + i),
 				Value: shuffledIds[i]
@@ -38,13 +38,13 @@ const populateTokenIDTable = async () => {
 	const categoryTokenCounts = [Number(config.category0TokenCount), Number(config.category1TokenCount), Number(config.category2TokenCount)];
 	const shuffledTokenIds = [];
 	for (let i = 0; i < categoryTokenCounts.length; i++) {
-		//category 0 should start at 1 and end at category_0_token_count
+		//category 0 should start at 1 ad end at category_0_token_count
 		//category 1 should start at category_0_token_count + 1 and end at category_0_token_count + category_1_token_count
 		//etc
 		const startIndex = categoryTokenCounts.slice(0, i).reduce((acc, val) => acc + val, 0) + 1;
 		const endIndex = startIndex + +categoryTokenCounts[i];
 		console.log(`startIndex: ${startIndex}, endIndex: ${endIndex}`);
-		const shuffledTokenIdsForCategory = Array.from({length: categoryTokenCounts[i]}, (_, i) => i + startIndex).sort(() => Math.random() - 0.5);
+		const shuffledTokenIdsForCategory = Array.from({ length: categoryTokenCounts[i] }, (_, i) => i + startIndex).sort(() => Math.random() - 0.5);
 		shuffledTokenIds.push(shuffledTokenIdsForCategory);
 		console.log(`shuffledTokenIdsForCategory ${i}:`, shuffledTokenIdsForCategory);
 
