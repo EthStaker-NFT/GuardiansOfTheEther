@@ -1,7 +1,7 @@
 const config = require('./config')[process.env.NODE_ENV || 'development'];
 const fs = require("fs");
 const csv = require("csv-parser");
-const {createTable, addItemToTable, configureAWS} = require("./dynamodb");
+const { createTable, addItemToTable, configureAWS } = require("./dynamodb");
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -32,7 +32,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 		.on('end', async () => {
 			console.log('CSV file successfully loaded.');
 			for (const row of rows) {
-				const address = row.Address;
+				const address = row.Address.toLowerCase();
 				const category0 = parseInt(row.Category0);
 				const category1 = parseInt(row.Category1);
 
