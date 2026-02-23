@@ -73,6 +73,10 @@ broadcast/
 cache/
 out/
 
+# AWS
+aws/
+
+
 # Compiled files
 **/*.o
 **/*.a
@@ -104,3 +108,5 @@ __pycache__/
 
 # Project specific
 metadata_and_image_gen/
+
+whitelist.csv
