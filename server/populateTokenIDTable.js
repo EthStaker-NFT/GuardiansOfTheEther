@@ -1,60 +1,107 @@
+const fs = require("fs");
+const path = require("path");
 const config = require('./config')[process.env.NODE_ENV || 'development'];
 const { createTable, createCounterTable, addItemToTable, configureAWS, listTables } = require("./dynamodb");
 
+const loadMintedTokenIdsFromCSV = () => {
+	if (!process.env.MINTED_CSV_PATH) {
+		console.log("No MINTED_CSV_PATH provided. Including all token IDs.");
+		return new Set();
+	}
+
+	const csvPath = path.resolve(process.env.MINTED_CSV_PATH);
+	console.log("Loading minted tokenIds from:", csvPath);
+
+	const file = fs.readFileSync(csvPath, "utf8");
+	const lines = file.trim().split("\n");
+
+	// Expect header: tokenId,wallet,categoryId
+	const mintedSet = new Set();
+
+	for (let i = 1; i < lines.length; i++) {
+		const [tokenId] = lines[i].split(",");
+		mintedSet.add(Number(tokenId));
+	}
+
+	console.log(`Loaded ${mintedSet.size} minted tokenIds from CSV.`);
+	return mintedSet;
+};
+
 const populateTokenIDTable = async () => {
 
-	console.log("listing tables");
+	console.log("Listing tables...");
 	await listTables();
 
+	const mintedTokenIds = loadMintedTokenIdsFromCSV();
+
 	const addCategoryToTable = async (startIndex, shuffledIds) => {
-		console.log(`Adding category with start index ${startIndex} to table.`);
+		console.log(`Adding category starting at index ${startIndex}`);
+
+		let insertedCount = 0;
+
 		for (let i = 0; i < shuffledIds.length; i++) {
+
+			const tokenId = shuffledIds[i];
+
+			// 🔥 EXCLUDE already minted IDs
+			if (mintedTokenIds.has(tokenId)) {
+				console.log(`Skipping already minted tokenId ${tokenId}`);
+				continue;
+			}
+
 			const item = {
-				Index: (startIndex + i),
-				Value: shuffledIds[i]
+				Index: (startIndex + insertedCount),
+				Value: tokenId
 			};
 
 			try {
 				await addItemToTable(tokenIDTableName, item);
-				console.log(`Item with index ${startIndex + i} and value ${shuffledIds[i]} added successfully.`);
+				insertedCount++;
 			} catch (err) {
-				console.error(`Failed to add item with index ${startIndex + i}:`, err);
+				console.error(`Failed to add index ${startIndex + insertedCount}:`, err);
 			}
 		}
-	}
 
-	//table for shuffled token IDs
+		console.log(`Inserted ${insertedCount} remaining tokens for this category.`);
+	};
+
+	// Table names
 	const tokenIDTableName = config.tokenIDTableName;
-	const keys = [
-		{ name: "Index", type: "N", keyType: "HASH" }, // 'N' for number type
-	];
-	await createTable(tokenIDTableName, keys, null);
 
-	//table for indices counters
-	console.log("config.tokenIDCountersTableName: ", config.tokenIDCountersTableName); // "TokenIDCounters
+	// Create tables fresh
+	await createTable(tokenIDTableName, [
+		{ name: "Index", type: "N", keyType: "HASH" }
+	], null);
+
 	await createCounterTable(config.tokenIDCountersTableName);
 
+	const categoryTokenCounts = [
+		Number(config.category0TokenCount),
+		Number(config.category1TokenCount),
+		Number(config.category2TokenCount)
+	];
 
-	const categoryTokenCounts = [Number(config.category0TokenCount), Number(config.category1TokenCount), Number(config.category2TokenCount)];
-	const shuffledTokenIds = [];
 	for (let i = 0; i < categoryTokenCounts.length; i++) {
-		//category 0 should start at 1 ad end at category_0_token_count
-		//category 1 should start at category_0_token_count + 1 and end at category_0_token_count + category_1_token_count
-		//etc
-		const startIndex = categoryTokenCounts.slice(0, i).reduce((acc, val) => acc + val, 0) + 1;
-		const endIndex = startIndex + +categoryTokenCounts[i];
-		console.log(`startIndex: ${startIndex}, endIndex: ${endIndex}`);
-		const shuffledTokenIdsForCategory = Array.from({ length: categoryTokenCounts[i] }, (_, i) => i + startIndex).sort(() => Math.random() - 0.5);
-		shuffledTokenIds.push(shuffledTokenIdsForCategory);
-		console.log(`shuffledTokenIdsForCategory ${i}:`, shuffledTokenIdsForCategory);
 
-		//add values to tokenIDTableName
+		const startIndex = categoryTokenCounts
+			.slice(0, i)
+			.reduce((acc, val) => acc + val, 0) + 1;
+
+		const endIndex = startIndex + categoryTokenCounts[i] - 1;
+
+		console.log(`Category ${i} range: ${startIndex} → ${endIndex}`);
+
+		const shuffledTokenIdsForCategory = Array
+			.from({ length: categoryTokenCounts[i] }, (_, idx) => idx + startIndex)
+			.sort(() => Math.random() - 0.5);
+
 		await addCategoryToTable(startIndex, shuffledTokenIdsForCategory);
 	}
-}
+};
 
 (async () => {
 	await configureAWS(config);
+
 	populateTokenIDTable()
 		.then(() => console.log('Token ID table populated successfully.'))
 		.catch(console.error);
