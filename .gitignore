@@ -54,6 +54,7 @@ bower_components
 # Misc
 .DS_Store
 Thumbs.db
+*.csv
 
 # IDEs and editors
 .idea
