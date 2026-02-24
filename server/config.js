@@ -41,7 +41,7 @@ const config = {
 		providerUrl: process.env.MAINNET_INFURA_URL,
 		whitelistPath: process.env.PRODUCTION_WHITELIST_PATH,
 		frontendUrl: process.env.REMOTE_FRONTEND_URL,
-		contractAddress: process.env.PRODUCTION_CONTRACT_ADDRESS,
+		contractAddress: process.env.MAINNET_CONTRACT_ADDRESS,
 		NFTTableName: process.env.PRODUCTION_NFT_DYNAMODB_TABLE_NAME,
 		whitelistTableName: process.env.PRODUCTION_WHITELIST_DYNAMODB_TABLE_NAME,
 		tokenIDTableName: process.env.PRODUCTION_SHUFFLED_TOKEN_ID_TABLE_NAME,
