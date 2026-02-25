@@ -1,7 +1,7 @@
 const config = require('./config')[process.env.NODE_ENV || 'development'];
 const fs = require("fs");
 const csv = require("csv-parser");
-const { createTable, addItemToTable, configureAWS } = require("./dynamodb");
+const { createTable, addItemToTable, configureAWS, waitForTableToExist } = require("./dynamodb");
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -15,7 +15,8 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 		{ name: "Address", type: "S", keyType: "HASH" },
 		{ name: "Category", type: "N", keyType: "RANGE" }
 	];
-	await createTable(tableName, keys);
+	await createTable(tableName, keys, null, null, 'PAY_PER_REQUEST');
+	await waitForTableToExist(tableName);
 
 	let count = 0;
 	const delayBetweenWrites = 1000 / 1000; // 1000 writes per second

@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const config = require('./config')[process.env.NODE_ENV || 'development'];
-const { createTable, createCounterTable, addItemToTable, configureAWS, listTables } = require("./dynamodb");
+const { createTable, createCounterTable, addItemToTable, configureAWS, listTables, waitForTableToExist } = require("./dynamodb");
 
 const loadMintedTokenIdsFromCSV = () => {
 	if (!process.env.MINTED_CSV_PATH) {
@@ -71,7 +71,8 @@ const populateTokenIDTable = async () => {
 	// Create tables fresh
 	await createTable(tokenIDTableName, [
 		{ name: "Index", type: "N", keyType: "HASH" }
-	], null);
+	], null, null, 'PAY_PER_REQUEST');
+	await waitForTableToExist(tokenIDTableName);
 
 	await createCounterTable(config.tokenIDCountersTableName);
 

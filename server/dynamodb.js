@@ -75,7 +75,13 @@ const tableExists = async (tableName) => {
  * // Calling createTable without specifying provisionedThroughput, using defaults
  * createTable(tableName, keys)
  */
-const createTable = async (tableName, keys, gsiConfig = null, provisionedThroughput = null) => {
+const createTable = async (
+	tableName,
+	keys,
+	gsiConfig = null,
+	provisionedThroughput = null,
+	billingMode = 'PROVISIONED'
+) => {
 	console.log(`Checking if '${tableName}' table exists...`);
 
 	const exists = await tableExists(tableName);
@@ -86,49 +92,82 @@ const createTable = async (tableName, keys, gsiConfig = null, provisionedThrough
 
 	console.log(`Creating table '${tableName}'...`);
 
-	// Set default values for provisionedThroughput if not provided
-	if (!provisionedThroughput) {
-		provisionedThroughput = {
-			ReadCapacityUnits: 10, // Default read capacity units
-			WriteCapacityUnits: 10 // Default write capacity units
-		};
-		console.log(`Using default provisioned throughput: ${JSON.stringify(provisionedThroughput)}`);
-	}
+	const keySchema = keys.map(key => ({
+		AttributeName: key.name,
+		KeyType: key.keyType
+	}));
 
-	// Transform the keys parameter into KeySchema and AttributeDefinitions
-	const keySchema = keys.map(key => ({ AttributeName: key.name, KeyType: key.keyType }));
-	const attributeDefinitions = keys.map(key => ({ AttributeName: key.name, AttributeType: key.type }));
+	const attributeDefinitions = keys.map(key => ({
+		AttributeName: key.name,
+		AttributeType: key.type
+	}));
 
-	let params = {
+	const params = {
 		TableName: tableName,
 		KeySchema: keySchema,
-		AttributeDefinitions: attributeDefinitions,
-		ProvisionedThroughput: provisionedThroughput
+		AttributeDefinitions: attributeDefinitions
 	};
 
-	// Add GSI configuration to the table creation parameters if provided
+	if (billingMode === 'PAY_PER_REQUEST') {
+		params.BillingMode = 'PAY_PER_REQUEST';
+	} else {
+		if (!provisionedThroughput) {
+			provisionedThroughput = {
+				ReadCapacityUnits: 10,
+				WriteCapacityUnits: 10
+			};
+		}
+
+		params.BillingMode = 'PROVISIONED';
+		params.ProvisionedThroughput = provisionedThroughput;
+	}
+
 	if (gsiConfig && gsiConfig.attributeName && gsiConfig.attributeType) {
 		params.AttributeDefinitions.push({
 			AttributeName: gsiConfig.attributeName,
 			AttributeType: gsiConfig.attributeType
 		});
 
-		params.GlobalSecondaryIndexes = [{
+		const gsi = {
 			IndexName: `${gsiConfig.attributeName}Index`,
-			KeySchema: [{ AttributeName: gsiConfig.attributeName, KeyType: "HASH" }],
-			Projection: { ProjectionType: "ALL" },
-			ProvisionedThroughput: provisionedThroughput
-		}];
+			KeySchema: [
+				{ AttributeName: gsiConfig.attributeName, KeyType: "HASH" }
+			],
+			Projection: { ProjectionType: "ALL" }
+		};
+
+		if (billingMode === 'PROVISIONED') {
+			gsi.ProvisionedThroughput = provisionedThroughput;
+		}
+
+		params.GlobalSecondaryIndexes = [gsi];
 	}
 
 	try {
-		const data = await dynamodb.createTable(params).promise();
-		console.log(`Created table '${tableName}'.`, JSON.stringify(data, null, 2));
+		await dynamodb.createTable(params).promise();
+
+		await dynamodb.waitFor('tableExists', {
+			TableName: tableName
+		}).promise();
+
+		console.log(`Table '${tableName}' is ACTIVE.`);
 	} catch (err) {
 		console.error(`Error creating table '${tableName}':`, err);
 		throw err;
 	}
 };
+
+/**
+ * Waits for a table to exist.
+ * @param tableName The name of the table to wait for.
+ * @returns {Promise<void>}
+ */
+const waitForTableToExist = async (tableName) => {
+	await dynamodb.waitFor('tableExists', {
+		TableName: tableName
+	}).promise();
+	console.log(`Table '${tableName}' exists.`);
+}
 
 /**
  * Creates a DynamoDB table intended for use as a counter store. This table
@@ -388,14 +427,14 @@ const getItems = async (tableName, indexName, key, value) => {
 
 	try {
 		const data = await docClient.query(params).promise();
-		return  data.Items || [];
+		return data.Items || [];
 	} catch (err) {
 		console.error(`Error querying for ${key} with value ${value}:`, err);
 		throw err;
 	}
 };
 
-const getAllItems = async (tableName, limit=1000) => {
+const getAllItems = async (tableName, limit = 1000) => {
 	let items = [];
 	let params = {
 		TableName: tableName,
@@ -412,4 +451,4 @@ const getAllItems = async (tableName, limit=1000) => {
 	return items;
 };
 
-module.exports = {configureAWS, listTables, createTable, createCounterTable, incrementCounter, addItemToTable, checkItemExists, getItemByPK, getItem, getItems, getAllItems, updateItem, deleteItem};
+module.exports = { configureAWS, listTables, createTable, createCounterTable, incrementCounter, addItemToTable, checkItemExists, getItemByPK, getItem, getItems, getAllItems, updateItem, deleteItem, waitForTableToExist };
