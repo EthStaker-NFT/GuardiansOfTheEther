@@ -8,8 +8,8 @@ const config = {
 		whitelistPath: process.env.LOCAL_WHITELIST_PATH,
 		frontendUrl: process.env.LOCAL_FRONTEND_URL,
 		contractAddress: process.env.LOCAL_CONTRACT_ADDRESS,
-		awsRegion: process.env.AWS_REGION,
-		awsEndpoint: process.env.AWS_ENDPOINT,
+		awsRegion: process.env.LOCAL_AWS_REGION,
+		awsEndpoint: process.env.LOCAL_AWS_ENDPOINT,
 		NFTTableName: process.env.TEST_NFT_DYNAMODB_TABLE_NAME,
 		whitelistTableName: process.env.TEST_WHITELIST_DYNAMODB_TABLE_NAME,
 		tokenIDTableName: process.env.TEST_SHUFFLED_TOKEN_ID_TABLE_NAME,
@@ -35,6 +35,7 @@ const config = {
 		category0TokenCount: process.env.TEST_CATEGORY_0_TOKEN_COUNT,
 		category1TokenCount: process.env.TEST_CATEGORY_1_TOKEN_COUNT,
 		category2TokenCount: process.env.TEST_CATEGORY_2_TOKEN_COUNT,
+		awsEndpoint: process.env.AWS_ENDPOINT,
 	},
 
 	production: {
@@ -51,6 +52,8 @@ const config = {
 		category0TokenCount: process.env.PRODUCTION_CATEGORY_0_TOKEN_COUNT,
 		category1TokenCount: process.env.PRODUCTION_CATEGORY_1_TOKEN_COUNT,
 		category2TokenCount: process.env.PRODUCTION_CATEGORY_2_TOKEN_COUNT,
+		awsRegion: process.env.AWS_REGION,
+		awsEndpoint: process.env.AWS_ENDPOINT,
 	}
 };
 
